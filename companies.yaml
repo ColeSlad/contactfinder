@@ -1,27 +1,170 @@
 # Target companies for SWE internship outreach.
-# `domain` is required and anchors email inference. Edit freely -- this seed
-# list is a starting point, not a recommendation.
 #
-# priority: high | normal | low   (high-priority companies are researched first)
+# `domain` is the EMAIL domain -- it anchors all address inference, so it must
+# be where staff actually receive mail, which is not always the website. Every
+# domain below was verified live: all resolve and all have MX records.
+#
+# `priority` is the expected yield of finding an early-career recruiter, NOT a
+# ranking of the companies:
+#   high   - confident structured campus / university recruiting program
+#   normal - real recruiting team, campus program less certain
+#   low    - seed / early stage; likely no recruiter at all, so aim at
+#            engineering leadership instead
+# These are estimates from company size and stage. Re-rank freely.
+#
+# careers_url is left blank deliberately rather than guessed; research fills it.
 
 companies:
-  - { name: Stripe,          domain: stripe.com,      careers_url: "https://stripe.com/jobs/university", priority: high }
-  - { name: Databricks,      domain: databricks.com,  careers_url: "https://www.databricks.com/company/careers/university-recruiting", priority: high }
-  - { name: Figma,           domain: figma.com,       careers_url: "https://www.figma.com/careers/", priority: high }
-  - { name: Ramp,            domain: ramp.com,        careers_url: "https://ramp.com/careers", priority: high }
-  - { name: Plaid,           domain: plaid.com,       careers_url: "https://plaid.com/careers/", priority: normal }
-  - { name: Snowflake,       domain: snowflake.com,   careers_url: "https://careers.snowflake.com/us/en/university-recruiting", priority: normal }
-  - { name: Datadog,         domain: datadoghq.com,   careers_url: "https://careers.datadoghq.com/university/", priority: normal }
-  - { name: Cloudflare,      domain: cloudflare.com,  careers_url: "https://www.cloudflare.com/careers/", priority: normal }
-  - { name: Coinbase,        domain: coinbase.com,    careers_url: "https://www.coinbase.com/careers", priority: normal }
-  - { name: Robinhood,       domain: robinhood.com,   careers_url: "https://careers.robinhood.com/", priority: normal }
-  - { name: Airtable,        domain: airtable.com,    careers_url: "https://airtable.com/careers", priority: normal }
-  - { name: Asana,           domain: asana.com,       careers_url: "https://asana.com/jobs", priority: normal }
-  - { name: Notion,          domain: makenotion.com,  careers_url: "https://www.notion.so/careers", priority: normal }
-  - { name: Vercel,          domain: vercel.com,      careers_url: "https://vercel.com/careers", priority: low }
-  - { name: Anduril,         domain: anduril.com,     careers_url: "https://www.anduril.com/careers/", priority: normal }
-  - { name: Two Sigma,       domain: twosigma.com,    careers_url: "https://careers.twosigma.com/careers/Home", priority: high }
-  - { name: Jane Street,     domain: janestreet.com,  careers_url: "https://www.janestreet.com/join-jane-street/", priority: high }
-  - { name: Citadel,         domain: citadel.com,     careers_url: "https://www.citadel.com/careers/students/", priority: normal }
-  - { name: Palantir,        domain: palantir.com,    careers_url: "https://www.palantir.com/careers/", priority: normal }
-  - { name: Roblox,          domain: roblox.com,      careers_url: "https://careers.roblox.com/", priority: low }
+
+
+  # --- HIGH: structured campus programs -- research these first ---
+  - { name: "Affirm", domain: affirm.com, priority: high }
+  - { name: "Airbnb", domain: airbnb.com, priority: high }
+  - { name: "Akuna Capital", domain: akunacapital.com, priority: high }
+  - { name: "Anduril", domain: anduril.com, priority: high }
+  - { name: "Anthropic", domain: anthropic.com, priority: high }
+  - { name: "Applied Intuition", domain: appliedintuition.com, priority: high }
+  - { name: "Autodesk", domain: autodesk.com, priority: high }
+  - { name: "Brex", domain: brex.com, priority: high }
+  - { name: "Chime", domain: chime.com, priority: high }
+  - { name: "Cloudflare", domain: cloudflare.com, priority: high }
+  - { name: "Coinbase", domain: coinbase.com, priority: high }
+  - { name: "CoreWeave", domain: coreweave.com, priority: high }
+  - { name: "Databricks", domain: databricks.com, priority: high }
+  - { name: "Datadog", domain: datadoghq.com, priority: high }
+  - { name: "Discord", domain: discord.com, priority: high }
+  - { name: "Docker", domain: docker.com, priority: high }
+  - { name: "DoorDash", domain: doordash.com, priority: high }
+  - { name: "DRW", domain: drw.com, priority: high }
+  - { name: "Duolingo", domain: duolingo.com, priority: high }
+  - { name: "Figma", domain: figma.com, priority: high }
+  - { name: "HubSpot", domain: hubspot.com, priority: high }
+  - { name: "Hudson River Trading", domain: hudsonrivertrading.com, priority: high }
+  - { name: "IMC Trading", domain: imc.com, priority: high }
+  - { name: "Intel", domain: intel.com, priority: high }
+  - { name: "Jane Street", domain: janestreet.com, priority: high }
+  - { name: "Jump Trading", domain: jumptrading.com, priority: high }
+  - { name: "Lyft", domain: lyft.com, priority: high }
+  - { name: "MongoDB", domain: mongodb.com, priority: high }
+  - { name: "Notion", domain: makenotion.com, priority: high, notes: "email domain differs from notion.so" }
+  - { name: "Nvidia", domain: nvidia.com, priority: high }
+  - { name: "Okta", domain: okta.com, priority: high }
+  - { name: "OpenAI", domain: openai.com, priority: high }
+  - { name: "Oracle", domain: oracle.com, priority: high }
+  - { name: "Palantir", domain: palantir.com, priority: high }
+  - { name: "Pinterest", domain: pinterest.com, priority: high }
+  - { name: "Plaid", domain: plaid.com, priority: high }
+  - { name: "Point72", domain: point72.com, priority: high }
+  - { name: "Ramp", domain: ramp.com, priority: high }
+  - { name: "Recursion", domain: recursion.com, priority: high }
+  - { name: "Reddit", domain: reddit.com, priority: high }
+  - { name: "Robinhood", domain: robinhood.com, priority: high }
+  - { name: "Roblox", domain: roblox.com, priority: high }
+  - { name: "Rocket Lab", domain: rocketlabusa.com, priority: high, notes: "alt email domain: rocketlabcorp.com (site now redirects there)" }
+  - { name: "Schonfeld", domain: schonfeld.com, priority: high }
+  - { name: "Snowflake", domain: snowflake.com, priority: high }
+  - { name: "SpaceX", domain: spacex.com, priority: high }
+  - { name: "Squarepoint", domain: squarepoint-capital.com, priority: high }
+  - { name: "Stripe", domain: stripe.com, priority: high }
+  - { name: "Tower Research", domain: tower-research.com, priority: high }
+  - { name: "Vanta", domain: vanta.com, priority: high }
+  - { name: "Vercel", domain: vercel.com, priority: high }
+  - { name: "Verkada", domain: verkada.com, priority: high }
+  - { name: "Waymo", domain: waymo.com, priority: high }
+  - { name: "Wiz", domain: wiz.io, priority: high }
+  - { name: "Zoox", domain: zoox.com, priority: high }
+
+  # --- NORMAL: real recruiting teams, campus program less certain ---
+  - { name: "1Password", domain: 1password.com, priority: normal }
+  - { name: "Abnormal AI", domain: abnormal.ai, priority: normal }
+  - { name: "Abridge", domain: abridge.com, priority: normal }
+  - { name: "Airwallex", domain: airwallex.com, priority: normal }
+  - { name: "Baseten", domain: baseten.co, priority: normal }
+  - { name: "Bolt / StackBlitz", domain: stackblitz.com, priority: normal }
+  - { name: "Clay", domain: clay.com, priority: normal }
+  - { name: "ClickHouse", domain: clickhouse.com, priority: normal }
+  - { name: "Cognition / Windsurf", domain: cognition.ai, priority: normal }
+  - { name: "Cohere", domain: cohere.com, priority: normal }
+  - { name: "Commure", domain: commure.com, priority: normal }
+  - { name: "Crusoe", domain: crusoe.ai, priority: normal }
+  - { name: "Cursor", domain: cursor.com, priority: normal }
+  - { name: "ElevenLabs", domain: elevenlabs.io, priority: normal }
+  - { name: "Figure", domain: figure.ai, priority: normal }
+  - { name: "Fireworks AI", domain: fireworks.ai, priority: normal }
+  - { name: "Glean", domain: glean.com, priority: normal }
+  - { name: "Harvey", domain: harvey.ai, priority: normal }
+  - { name: "Huntress", domain: huntress.com, priority: normal }
+  - { name: "Kalshi", domain: kalshi.com, priority: normal }
+  - { name: "Lambda", domain: lambda.ai, priority: normal }
+  - { name: "Linear", domain: linear.app, priority: normal }
+  - { name: "Lovable", domain: lovable.dev, priority: normal }
+  - { name: "Mercor", domain: mercor.com, priority: normal }
+  - { name: "Mercury", domain: mercury.com, priority: normal }
+  - { name: "Midjourney", domain: midjourney.com, priority: normal }
+  - { name: "Mistral AI", domain: mistral.ai, priority: normal }
+  - { name: "Modal", domain: modal.com, priority: normal }
+  - { name: "Modern Treasury", domain: moderntreasury.com, priority: normal }
+  - { name: "OpenEvidence", domain: openevidence.com, priority: normal }
+  - { name: "Polymarket", domain: polymarket.com, priority: normal }
+  - { name: "PostHog", domain: posthog.com, priority: normal }
+  - { name: "Railway", domain: railway.com, priority: normal }
+  - { name: "Render", domain: render.com, priority: normal }
+  - { name: "Replit", domain: replit.com, priority: normal }
+  - { name: "Runway AI", domain: runway.com, priority: normal }
+  - { name: "Semgrep", domain: semgrep.dev, priority: normal }
+  - { name: "Shield AI", domain: shield.ai, priority: normal }
+  - { name: "Sierra", domain: sierra.ai, priority: normal }
+  - { name: "Suno", domain: suno.com, priority: normal }
+  - { name: "Supabase", domain: supabase.com, priority: normal }
+  - { name: "Synthesia", domain: synthesia.io, priority: normal }
+  - { name: "Temporal", domain: temporal.io, priority: normal }
+  - { name: "Together AI", domain: together.ai, priority: normal }
+  - { name: "Wayve", domain: wayve.ai, priority: normal }
+  - { name: "WorkOS", domain: workos.com, priority: normal }
+  - { name: "xAI", domain: x.ai, priority: normal }
+  - { name: "Zipline", domain: flyzipline.com, priority: normal }
+
+  # --- LOW: seed / early stage -- likely no recruiter; target eng leadership ---
+  - { name: "1X", domain: 1x.tech, priority: low }
+  - { name: "Ambience Healthcare", domain: ambiencehealthcare.com, priority: low }
+  - { name: "Astranis", domain: astranis.com, priority: low }
+  - { name: "Augment Code", domain: augmentcode.com, priority: low }
+  - { name: "Black Forest Labs", domain: blackforestlabs.ai, priority: low }
+  - { name: "Browserbase", domain: browserbase.com, priority: low }
+  - { name: "Campfire", domain: meetcampfire.com, priority: low, careers_url: "https://campfire.ai/", notes: "website is campfire.ai; recruiting@meetcampfire.com is published" }
+  - { name: "Chai Discovery", domain: chaidiscovery.com, priority: low }
+  - { name: "Chainguard", domain: chainguard.dev, priority: low }
+  - { name: "CodeRabbit", domain: coderabbit.ai, priority: low }
+  - { name: "Column", domain: column.com, priority: low }
+  - { name: "David AI", domain: davidai.com, priority: low }
+  - { name: "Decagon", domain: decagon.ai, priority: low }
+  - { name: "Endor Labs", domain: endorlabs.com, priority: low }
+  - { name: "Eudia", domain: eudia.com, priority: low }
+  - { name: "Exa", domain: exa.ai, priority: low }
+  - { name: "Factory", domain: factory.ai, priority: low }
+  - { name: "fal", domain: fal.ai, priority: low }
+  - { name: "Firecrawl", domain: firecrawl.dev, priority: low }
+  - { name: "Gamma", domain: gamma.app, priority: low }
+  - { name: "Granola", domain: granola.ai, priority: low }
+  - { name: "HappyRobot", domain: happyrobot.ai, priority: low }
+  - { name: "Harmonic", domain: harmonic.ai, priority: low }
+  - { name: "Hebbia", domain: hebbia.ai, priority: low }
+  - { name: "Mintlify", domain: mintlify.com, priority: low }
+  - { name: "Nabla", domain: nabla.com, priority: low }
+  - { name: "Numeric", domain: numeric.io, priority: low }
+  - { name: "Physical Intelligence", domain: physicalintelligence.company, priority: low }
+  - { name: "Reducto", domain: reducto.ai, priority: low }
+  - { name: "Reflection AI", domain: reflection.ai, priority: low }
+  - { name: "Rilla", domain: rilla.com, priority: low }
+  - { name: "Rillet", domain: rillet.com, priority: low }
+  - { name: "Saronic", domain: saronic.com, priority: low }
+  - { name: "Sesame", domain: sesame.com, priority: low }
+  - { name: "Socket", domain: socket.dev, priority: low }
+  - { name: "Suki", domain: suki.ai, priority: low }
+  - { name: "Thinking Machines Lab", domain: thinkingmachines.ai, priority: low }
+  - { name: "turbopuffer", domain: turbopuffer.com, priority: low }
+  - { name: "Varda", domain: varda.com, priority: low }
+  - { name: "Warp", domain: warp.dev, priority: low }
+  - { name: "Wispr Flow", domain: wisprflow.ai, priority: low }
+  - { name: "World Labs", domain: worldlabs.ai, priority: low }
+  - { name: "Zed", domain: zed.dev, priority: low }
