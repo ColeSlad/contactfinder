@@ -41,7 +41,7 @@ companies:
   - { name: "Duolingo", domain: duolingo.com, priority: high }
   - { name: "Figma", domain: figma.com, priority: high }
   - { name: "HubSpot", domain: hubspot.com, priority: high }
-  - { name: "Hudson River Trading", domain: hudsonrivertrading.com, priority: high }
+  - { name: "Hudson River Trading", domain: hudson-trading.com, priority: high, careers_url: "https://www.hudsonrivertrading.com/careers/", notes: "email domain is hudson-trading.com, NOT the hudsonrivertrading.com website; their contact page states HRT mail always comes from @hudson-trading.com" }
   - { name: "IMC Trading", domain: imc.com, priority: high }
   - { name: "Intel", domain: intel.com, priority: high }
   - { name: "Jane Street", domain: janestreet.com, priority: high }
