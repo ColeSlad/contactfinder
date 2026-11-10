@@ -12,7 +12,7 @@ from .config import load_yaml
 from .mail import classify_bounce, classify_reply
 from .normalize import parse_name
 from .patterns import candidates, pattern_of
-from .score import score_contact, title_relevance
+from .score import alias_relevance, score_contact, title_relevance
 
 HISTORY_PATH = "eval/history.jsonl"
 
@@ -26,8 +26,9 @@ SECTION_WEIGHTS = {
     "reverse_map": 0.10,
     "lock_transfer": 0.25,
     "title_tier": 0.10,
+    "alias_tier": 0.05,
     "ranking": 0.05,
-    "mail": 0.10,
+    "mail": 0.05,
 }
 
 
@@ -168,6 +169,20 @@ def evaluate(golden_path: str = "eval/golden.yaml") -> Scorecard:
                 f"title_tier {case['title']!r}: got ({label}, {val:.2f}), want "
                 f"({case['tier']}, {lo:.2f}-{hi:.2f})")
     card.sections["title_tier"] = _fraction(ok, n)
+
+    # --- role-inbox tiering ---
+    ok = n = 0
+    for case in g.get("alias_cases", []):
+        n += 1
+        val, label = alias_relevance(case["local"])
+        lo, hi = case.get("min", 0.0), case.get("max", 1.0)
+        if label == case["tier"] and lo <= val <= hi:
+            ok += 1
+        else:
+            card.failures.append(
+                f"alias_tier {case['local']!r}: got ({label}, {val:.2f}), want "
+                f"({case['tier']}, {lo:.2f}-{hi:.2f})")
+    card.sections["alias_tier"] = _fraction(ok, n)
 
     # --- pairwise ranking: does the better target outrank the worse one? ---
     ok = n = 0

@@ -11,7 +11,7 @@ from .config import (DEFAULT_CONFIG, effective_prior, effective_weights,
                      evidence_with_overrides)
 from .normalize import contact_key, domain_of
 from .patterns import candidates, pattern_of
-from .score import score_contact
+from .score import is_role_row, score_contact
 from .store import months_between
 
 REQUIRED = ("name", "domain")
@@ -48,8 +48,13 @@ def ingest_candidates(store, cands: list[dict], cfg: dict | None = None,
 
     for raw in cands or []:
         name = (raw.get("name") or "").strip()
-        domain = domain_of(raw.get("domain") or raw.get("company_domain") or "")
-        if not name or not domain:
+        given_email = (raw.get("email") or "").strip().lower()
+        domain = domain_of(raw.get("domain") or raw.get("company_domain")
+                           or given_email)
+        # A published role inbox has no person behind it but is still a valid
+        # target -- often the only one a company publishes.
+        role = bool(given_email) and not name
+        if (not name and not role) or not domain:
             rep.skipped.append(f"missing name or domain: {raw!r:.80}")
             continue
         if "*" in name:
@@ -62,7 +67,7 @@ def ingest_candidates(store, cands: list[dict], cfg: dict | None = None,
         store.upsert_company(domain, raw.get("company", ""), raw.get("careers_url", ""))
         evidence = evidence_with_overrides(store, domain, cfg)
 
-        given = (raw.get("email") or "").strip().lower()
+        given = given_email
         verified = bool(raw.get("email_verified"))
         if given:
             email = given
@@ -79,12 +84,13 @@ def ingest_candidates(store, cands: list[dict], cfg: dict | None = None,
 
         found_at = raw.get("found_at") or stamp
         scored = score_contact({
-            "title": raw.get("title", ""), "email": email,
+            "title": raw.get("title", ""), "email": email, "role": role,
             "email_confidence": confidence, "source": raw.get("source", "unknown"),
             "months_old": months_between(found_at, stamp),
         }, weights)
 
-        key = contact_key(name, domain)
+        # Role inboxes all have an empty name, so they key on the address.
+        key = f"role|{email}" if role else contact_key(name, domain)
         existed = bool(store.db.execute(
             "SELECT 1 FROM contacts WHERE key=?", (key,)).fetchone())
         store.upsert_contact({
@@ -96,8 +102,11 @@ def ingest_candidates(store, cands: list[dict], cfg: dict | None = None,
             "seniority_tier": scored.seniority_tier, "flags": scored.flags,
             "notes": raw.get("notes", ""),
         })
-        if verified and pattern:
-            store.add_confirmation(domain, pattern, email, name, "research_verified", stamp)
+        # A role inbox must never teach a format: there is no name to
+        # reverse-map from, so careers@ would imply nothing about first.last.
+        if verified and pattern and not role:
+            store.add_confirmation(domain, pattern, email, name,
+                                   "research_verified", stamp)
 
         rep.added += 0 if existed else 1
         rep.updated += 1 if existed else 0
@@ -128,13 +137,14 @@ def rescore_all(store, cfg: dict | None = None, today: str | None = None) -> int
         pattern = c.get("email_pattern") or ""
         confidence = c.get("email_confidence") or 0.0
 
-        if not c.get("email_verified"):
+        role = is_role_row(c)
+        if not c.get("email_verified") and not role:
             ranked = candidates(c["name"], domain, evidence, prior, limit=1)
             if ranked:
                 email, pattern, confidence = ranked[0].email, ranked[0].pattern, ranked[0].confidence
 
         scored = score_contact({
-            "title": c.get("title", ""), "email": email,
+            "title": c.get("title", ""), "email": email, "role": role,
             "email_confidence": confidence, "source": c.get("source"),
             "months_old": months_between(c.get("found_at"), stamp),
         }, weights)

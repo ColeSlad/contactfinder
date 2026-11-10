@@ -13,25 +13,27 @@ from .normalize import normalize_title
 # Ordered: first match wins, so the most specific pattern must come first.
 # Scores encode who actually owns intern requisitions and answers cold email.
 TITLE_TIERS: list[tuple[str, float, str]] = [
-    # UNI matches 'university', 'univ', 'uni'; recruit\w* matches
-    # 'recruiter'/'recruiting' -- a trailing \b would miss both.
+    # Every keyword that can take a plural uses \w* rather than a trailing \b.
+    # A bare \b silently failed on real titles found in research: "Early
+    # Careers Partnerships & Initiatives" scored 0.10 unrelated and was gated
+    # out of outreach entirely, just as "\brecruit\b" never matched "Recruiter".
     (r"\b(universit\w*|univ|uni|campus)\b.*\b(recruit|talent|relations|program)", 1.00, "university-recruiting"),
-    (r"\b(early[- ]?career|early talent|emerging talent)\b", 1.00, "early-career"),
-    (r"\b(intern\w*|new grad\w*|new graduate\w*|student\w*)\b.*\b(program|recruit|talent|hiring)", 0.95, "intern-program"),
-    (r"\b(recruit\w*|talent)\b.*\b(universit\w*|univ|uni|campus|early[- ]?career|student|intern|new grad)", 0.95, "university-recruiting"),
+    (r"\b(early[- ]?career\w*|early talent\w*|emerging talent\w*)\b", 1.00, "early-career"),
+    (r"\b(intern\w*|new.?grad\w*|student\w*)\b.*\b(program|recruit|talent|hiring)", 0.95, "intern-program"),
+    (r"\b(recruit\w*|talent\w*)\b.*\b(universit\w*|univ|uni|campus|early[- ]?career|student|intern|new.?grad)", 0.95, "university-recruiting"),
     (r"\b(universit\w*|campus) relations\b", 0.90, "university-relations"),
-    (r"\b(sourcer|sourcing)\b.*\b(universit\w*|campus|student|intern|early[- ]?career|new grad)", 0.60, "university-sourcing"),
-    (r"\b(universit\w*|campus|student|intern|early[- ]?career)\b.*\b(sourcer|sourcing)\b", 0.60, "university-sourcing"),
+    (r"\bsourc\w*\b.*\b(universit\w*|campus|student|intern|early[- ]?career|new.?grad)", 0.60, "university-sourcing"),
+    (r"\b(universit\w*|campus|student\w*|intern\w*|early[- ]?career\w*)\b.*\bsourc\w*\b", 0.60, "university-sourcing"),
     (r"\b(technical|software|engineering|tech)\b.*\brecruit", 0.70, "technical-recruiting"),
-    (r"\brecruit\w*\b.*\b(engineer|technical|software)", 0.70, "technical-recruiting"),
-    (r"\b(talent acquisition|ta)\b.*\b(partner|specialist|manager|lead|associate)", 0.55, "talent-acquisition"),
-    (r"\b(recruiting|talent) (coordinator|associate|assistant|operations|ops)\b", 0.50, "recruiting-coordinator"),
-    (r"\b(sourcer|sourcing)\b", 0.45, "sourcing"),
+    (r"\brecruit\w*\b.*\b(engineer\w*|technical|software)", 0.70, "technical-recruiting"),
+    (r"\b(talent acquisition|ta)\b.*\b(partner\w*|specialist\w*|manager\w*|lead\w*|associate\w*)", 0.55, "talent-acquisition"),
+    (r"\b(recruiting|talent) (coordinator\w*|associate\w*|assistant\w*|operations|ops)\b", 0.50, "recruiting-coordinator"),
+    (r"\bsourc(er\w*|ing)\b", 0.45, "sourcing"),
     (r"\brecruit\w*\b", 0.55, "recruiting-generic"),
     (r"\btalent acquisition\b", 0.55, "talent-acquisition"),
-    (r"\b(people operations|people ops|human resources|hr)\b", 0.35, "people-ops"),
-    (r"\bpeople (partner|business partner|advisor|team)\b", 0.35, "people-ops"),
-    (r"\b(engineering|software) (manager|lead|director)\b", 0.30, "eng-hiring-manager"),
+    (r"\b(people operations|people ops|human resource\w*|hr)\b", 0.35, "people-ops"),
+    (r"\bpeople (partner\w*|business partner\w*|advisor\w*|team)\b", 0.35, "people-ops"),
+    (r"\b(engineering|software) (manager\w*|lead\w*|director\w*)\b", 0.30, "eng-hiring-manager"),
     (r"\b(head|vp|vice president|director) of (people|talent|hr|human resources)\b", 0.40, "people-leadership"),
     (r"\bchief (people|talent|hr|human resources)\b", 0.40, "people-leadership"),
 ]
@@ -46,6 +48,18 @@ SENIORITY_TIERS: list[tuple[str, float, str]] = [
     (r"\b(manager|lead|principal)\b", 0.85, "manager"),
     (r"\b(senior|sr|staff)\b", 0.95, "senior-ic"),
     (r"\b(coordinator|associate|assistant|specialist|partner|analyst)\b", 1.00, "ic"),
+]
+
+# Published role inboxes (campusrecruiting@, careers@) are frequently the only
+# contact a company publishes, and they are monitored and need no inference.
+# There is no job title to tier on, so the alias itself is scored.
+# Ordered: first match wins.
+ROLE_ALIASES: list[tuple[str, float, str]] = [
+    (r"(campus|universit|early.?care|intern|student|new.?grad|emerging)", 1.00, "role-campus"),
+    (r"(recruit|talent|hiring|jobs|careers|apply|candidate)", 0.60, "role-recruiting"),
+    (r"(^hr$|^hr[.-]|people|humanresource)", 0.40, "role-hr"),
+    (r"(^info$|^contact$|^hello$|^hi$|^team$|^support$|^sales$|^press$|^legal$)",
+     0.20, "role-generic"),
 ]
 
 SOURCE_QUALITY = {
@@ -83,6 +97,36 @@ class ScoreResult:
     flags: list = field(default_factory=list)
 
 
+def alias_relevance(local: str) -> tuple[float, str]:
+    """Score a role inbox from its local part, e.g. 'campusrecruiting'."""
+    key = re.sub(r"[^a-z0-9.-]", "", (local or "").lower().split("@")[0])
+    if not key:
+        return 0.10, "role-unknown"
+    for pat, val, label in ROLE_ALIASES:
+        if re.search(pat, key):
+            return val, label
+    return 0.30, "role-other"
+
+
+def is_role_contact(contact: dict) -> bool:
+    """True when this contact is a published role inbox, not a person.
+
+    Deliberately explicit. The feature dicts handed to score_contact routinely
+    carry no `name` at all, so a missing name cannot be taken to mean "role
+    inbox" -- doing so scored every contact as one.
+    """
+    return bool(contact.get("role"))
+
+
+def is_role_row(row: dict) -> bool:
+    """True when a *stored* contact is a role inbox.
+
+    Safe on database rows specifically, because ingestion requires a name for
+    every person, so a stored row with an address and no name is an inbox.
+    """
+    return bool(row.get("email")) and not (row.get("name") or "").strip()
+
+
 def title_relevance(title: str) -> tuple[float, str]:
     t = normalize_title(title)
     if not t:
@@ -115,8 +159,14 @@ def score_contact(contact: dict, weights: dict | None = None) -> ScoreResult:
     months_old, email."""
     w = {**DEFAULT_WEIGHTS, **(weights or {})}
     title = contact.get("title", "") or ""
-    t_val, t_label = title_relevance(title)
-    s_val, s_label = seniority_fit(title)
+    if is_role_contact(contact):
+        # No title and nobody behind it: score the alias. Seniority is
+        # meaningless for an inbox, so it must not drag the score down.
+        t_val, t_label = alias_relevance((contact.get("email") or "").split("@")[0])
+        s_val, s_label = 1.0, "role-inbox"
+    else:
+        t_val, t_label = title_relevance(title)
+        s_val, s_label = seniority_fit(title)
     src = SOURCE_QUALITY.get(contact.get("source") or "unknown", SOURCE_QUALITY["unknown"])
     rec = recency(contact.get("months_old"))
     econf = float(contact.get("email_confidence") or 0.0)

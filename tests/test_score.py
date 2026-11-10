@@ -107,3 +107,74 @@ def test_unknown_source_is_treated_as_weak():
     known = score_contact({**BASE, "title": "X", "source": "company_directory"})
     unknown = score_contact({**BASE, "title": "X", "source": "nonsense-source"})
     assert unknown.score < known.score
+
+
+# ------------------------------------------------------------- role inboxes
+@pytest.mark.parametrize("local,tier", [
+    ("campusrecruiting", "role-campus"),
+    ("university-recruiting", "role-campus"),
+    ("earlycareers", "role-campus"),
+    ("interns", "role-campus"),
+    ("newgrads", "role-campus"),
+    ("recruiting", "role-recruiting"),
+    ("careers", "role-recruiting"),
+    ("jobs", "role-recruiting"),
+    ("hr", "role-hr"),
+    ("people", "role-hr"),
+    ("info", "role-generic"),
+    ("press", "role-generic"),
+    ("xyzzy", "role-other"),
+    ("", "role-unknown"),
+])
+def test_alias_tiers(local, tier):
+    from cf.score import alias_relevance
+    assert alias_relevance(local)[1] == tier
+
+
+def test_alias_accepts_a_full_address():
+    from cf.score import alias_relevance
+    assert alias_relevance("campusrecruiting@jumptrading.com")[1] == "role-campus"
+
+
+@pytest.mark.parametrize("contact,is_role", [
+    ({"email": "careers@x.com", "role": True}, True),
+    ({"email": "careers@x.com", "role": False}, False),
+    # A missing name must NOT imply a role inbox: scoring dicts never carry
+    # one, so inferring it scored every contact as an inbox.
+    ({"email": "careers@x.com"}, False),
+    ({"email": "a@x.com", "name": "Jane Doe"}, False),
+    ({}, False),
+])
+def test_is_role_contact_is_explicit(contact, is_role):
+    from cf.score import is_role_contact
+    assert is_role_contact(contact) is is_role
+
+
+@pytest.mark.parametrize("row,is_role", [
+    ({"email": "careers@x.com", "name": ""}, True),
+    ({"email": "careers@x.com", "name": "   "}, True),
+    ({"email": "a@x.com", "name": "Jane Doe"}, False),
+    ({"name": ""}, False),
+])
+def test_is_role_row_infers_from_stored_rows(row, is_role):
+    # Safe on DB rows only: ingestion requires a name for every person.
+    from cf.score import is_role_row
+    assert is_role_row(row) is is_role
+
+
+def test_seniority_does_not_penalise_a_role_inbox():
+    from cf.score import score_contact
+    r = score_contact({"email": "campusrecruiting@x.com", "role": True,
+                       "email_confidence": 0.99, "source": "careers_page",
+                       "months_old": 0})
+    assert r.seniority_tier == "role-inbox"
+    assert r.features["seniority"] == 1.0
+
+
+def test_a_campus_inbox_can_outscore_a_named_technical_recruiter():
+    from cf.score import score_contact
+    inbox = score_contact({"email": "campusrecruiting@x.com", "role": True,
+                           "email_confidence": 0.99, "source": "careers_page",
+                           "months_old": 0})
+    person = score_contact({**BASE, "title": "Technical Recruiter"})
+    assert inbox.score > person.score

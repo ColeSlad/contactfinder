@@ -149,3 +149,85 @@ def test_exclude_flags_are_configurable(store):
                                  source="company_directory", found_at=TODAY)], CFG, TODAY)
     permissive = {**CFG, "run": {**CFG["run"], "exclude_flags": []}}
     assert len(queue(store, permissive)) == 1
+
+
+# ------------------------------------------------------------- role inboxes
+# A published role inbox (campusrecruiting@, careers@) is often the only
+# contact a company publishes, and is monitored and needs no inference.
+
+def _role(email, **kw):
+    return {"email": email, "email_verified": True, "source": "careers_page",
+            "found_at": "2026-11-01", **kw}
+
+
+def test_a_role_inbox_is_ingested_without_a_name(store):
+    rep = ingest_candidates(store, [_role("campusrecruiting@jumptrading.com")],
+                            CFG, TODAY)
+    assert rep.added == 1
+    got = store.contacts()[0]
+    assert got["name"] == ""
+    assert got["email"] == "campusrecruiting@jumptrading.com"
+    assert got["role_tier"] == "role-campus"
+
+
+def test_the_domain_is_taken_from_the_address_when_absent(store):
+    ingest_candidates(store, [_role("careers@hudson-trading.com")], CFG, TODAY)
+    assert store.contacts()[0]["company_domain"] == "hudson-trading.com"
+
+
+def test_a_role_inbox_never_teaches_an_email_format(store):
+    # careers@ implies nothing about whether staff use first.last or flast;
+    # confirming a format from it would corrupt every guess at the company.
+    ingest_candidates(store, [_role("careers@hudson-trading.com")], CFG, TODAY)
+    assert store.evidence_for("hudson-trading.com") == {}
+    from cf.patterns import locked_pattern
+    assert locked_pattern(store.evidence_for("hudson-trading.com")) is None
+
+
+def test_several_role_inboxes_at_one_company_do_not_collide(store):
+    ingest_candidates(store, [_role("careers@hudson-trading.com"),
+                              _role("press@hudson-trading.com"),
+                              _role("sponsorships@hudson-trading.com")], CFG, TODAY)
+    assert len(store.contacts()) == 3
+
+
+def test_a_role_inbox_and_a_person_coexist_at_one_company(store):
+    ingest_candidates(store, [
+        _role("careers@hudson-trading.com"),
+        _c("Christina Song", "hudson-trading.com",
+           title="Campus Recruiting and Internship Programs Lead"),
+    ], CFG, TODAY)
+    assert len(store.contacts()) == 2
+    assert {c["role_tier"] for c in store.contacts()} == {
+        "role-recruiting", "university-recruiting"}
+
+
+def test_a_campus_inbox_outranks_a_generic_recruiting_inbox(store):
+    ingest_candidates(store, [_role("campusrecruiting@jumptrading.com"),
+                              _role("careers@jumptrading.com")], CFG, TODAY)
+    rows = queue(store, CFG)
+    assert rows[0]["email"] == "campusrecruiting@jumptrading.com"
+    assert rows[0]["score"] > rows[1]["score"]
+
+
+def test_a_generic_inbox_is_gated_out_of_the_queue(store):
+    ingest_candidates(store, [_role("info@acme.com"), _role("press@acme.com")],
+                      CFG, TODAY)
+    assert all("off_target_role" in c["flags"] for c in store.contacts())
+    assert queue(store, CFG) == []
+
+
+def test_rescoring_never_rewrites_a_role_address(store):
+    ingest_candidates(store, [_role("careers@hudson-trading.com")], CFG, TODAY)
+    # A format gets locked at the company from a real person elsewhere.
+    store.add_confirmation("hudson-trading.com", "flast", "csong@hudson-trading.com",
+                           "Christina Song", "manual")
+    rescore_all(store, CFG, TODAY)
+    emails = {c["email"] for c in store.contacts()}
+    assert "careers@hudson-trading.com" in emails
+
+
+def test_a_nameless_candidate_with_no_address_is_still_skipped(store):
+    rep = ingest_candidates(store, [{"domain": "acme.com", "title": "Recruiter"}],
+                            CFG, TODAY)
+    assert rep.added == 0 and len(rep.skipped) == 1

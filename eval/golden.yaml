@@ -72,6 +72,30 @@ title_cases:
   - { title: "People Partner",                  tier: people-ops,            max: 0.40 }
   - { title: "Senior Software Engineer",        tier: unrelated,             max: 0.15 }
   - { title: "Chief People Officer",            tier: people-leadership,     max: 0.45 }
+  # Plural forms. All of these were found in real research and all of them
+  # scored 0.10 unrelated before the trailing-\b fix, which gated genuine
+  # campus recruiters out of outreach.
+  - { title: "Early Careers Partnerships & Initiatives", tier: early-career,  min: 0.95 }
+  - { title: "Early Careers",                   tier: early-career,          min: 0.95 }
+  - { title: "Emerging Talents",                tier: early-career,          min: 0.95 }
+  - { title: "Early-Careers Lead",              tier: early-career,          min: 0.95 }
+  - { title: "Campus Recruiting and Internship Programs Lead", tier: university-recruiting, min: 0.95 }
+  - { title: "Recruiting Coordinators",         tier: recruiting-coordinator, min: 0.45, max: 0.55 }
+  - { title: "Talent Sourcers",                 tier: sourcing,              max: 0.50 }
+  - { title: "Talent Acquisition Partners",     tier: talent-acquisition,    min: 0.50, max: 0.60 }
+  - { title: "Technical Recruiters, Engineers", tier: technical-recruiting,  min: 0.65, max: 0.75 }
+
+# Published role inboxes, scored on the alias since there is no job title.
+alias_cases:
+  - { local: "campusrecruiting",      tier: role-campus,     min: 0.95 }
+  - { local: "university-recruiting", tier: role-campus,     min: 0.95 }
+  - { local: "earlycareers",          tier: role-campus,     min: 0.95 }
+  - { local: "interns",               tier: role-campus,     min: 0.95 }
+  - { local: "recruiting",            tier: role-recruiting, min: 0.55, max: 0.65 }
+  - { local: "careers",               tier: role-recruiting, min: 0.55, max: 0.65 }
+  - { local: "hr",                    tier: role-hr,         max: 0.45 }
+  - { local: "info",                  tier: role-generic,    max: 0.25 }
+  - { local: "press",                 tier: role-generic,    max: 0.25 }
 
 # Reverse-mapping a confirmed address to the format it proves. This is how one
 # verified contact teaches us a whole company's format.
