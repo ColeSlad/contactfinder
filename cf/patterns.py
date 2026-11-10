@@ -46,7 +46,12 @@ BUILDERS = {
 }
 
 HIT_WEIGHT = 3.0    # a confirmed address is strong evidence
-MISS_WEIGHT = 3.0   # a hard bounce is equally strong negative evidence
+# Deliberately asymmetric and larger than HIT_WEIGHT. The positive case is
+# already handled decisively by the lock rule, so MISS_WEIGHT's only job is
+# demotion -- and it must be heavy enough that a single hard bounce pushes a
+# format out of first place even when its prior is dominant. Otherwise the next
+# address we try at that company repeats a format we just proved bounces.
+MISS_WEIGHT = 9.0
 ALPHA = 4.0         # prior strength (in pseudo-observations)
 LOCKED_CONFIDENCE = 0.95
 
