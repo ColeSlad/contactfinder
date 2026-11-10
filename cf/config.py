@@ -16,7 +16,11 @@ DEFAULT_CONFIG = {
     "weights": {},
     "global_prior": {},
     "known_formats": {},
-    "run": {"min_score": 0.45, "max_contacts_per_company": 5},
+    "run": {"min_score": 0.45, "max_contacts_per_company": 5,
+            # Hard exclusions. Role relevance is a gate, not a preference: a
+            # software engineer with a fresh, well-sourced profile can other-
+            # wise clear min_score on source and recency alone.
+            "exclude_flags": ["off_target_role", "no_email"]},
 }
 
 

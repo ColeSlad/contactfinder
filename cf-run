@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run ContactFinder using the project venv.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="$HERE/.venv/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "venv missing. Run: python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt" >&2
+  exit 1
+fi
+cd "$HERE"
+exec "$PY" -m cf.cli "$@"

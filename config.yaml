@@ -7,6 +7,10 @@ run:
   min_score: 0.45
   # Cap per company so one employer can't flood a batch.
   max_contacts_per_company: 5
+  # Hard exclusions, applied regardless of score. Role relevance is a gate:
+  # without this a software engineer with a fresh, well-sourced profile can
+  # clear min_score on source quality and recency alone.
+  exclude_flags: [off_target_role, no_email]
 
 # Pin a company's email format when you know it for certain. Treated as a
 # confirmed hit, which locks inference for everyone at that domain.
