@@ -261,3 +261,67 @@ def test_report_summary_is_readable(stub_post):
     _, rep = find_contacts("acme.com")
     out = rep.summary()
     assert "credits" in out and "off-target role" in out
+
+
+# ------------------------------------------------------- plan / error handling
+def test_plan_errors_surface_apollos_own_explanation():
+    from cf.apollo import _error_message
+    body = json.dumps({
+        "error": "The api/v1/mixed_people/api_search API is not included in your "
+                 "Free plan and is not accessible, even with a master key.",
+        "error_code": "API_INACCESSIBLE",
+        "error_details": {"message": "Your team is not permitted to call this endpoint."},
+    })
+    msg = _error_message(body, 403)
+    # The structured field wins over the deprecated flat one...
+    assert "not permitted to call this endpoint" in msg
+    # ...and the cause must be stated as a plan limit, not a key-permissions
+    # problem: Apollo refuses these endpoints even with a master key.
+    assert "paid Apollo plan" in msg
+    assert "master" not in msg.lower()
+
+
+def test_error_details_is_preferred_over_the_deprecated_error_field():
+    from cf.apollo import _error_message
+    body = json.dumps({"error": "old flat message",
+                       "error_details": {"message": "structured message"}})
+    assert "structured message" in _error_message(body, 400)
+
+
+def test_error_message_falls_back_when_body_is_not_json():
+    from cf.apollo import _error_message
+    assert "HTTP 500" in _error_message("<html>gateway</html>", 500)
+    assert "HTTP 500" in _error_message("", 500)
+
+
+@pytest.mark.parametrize("code,needle", [
+    (401, "rejected"), (429, "rate limited"), (403, "paid Apollo plan"),
+])
+def test_status_codes_get_actionable_messages(code, needle):
+    from cf.apollo import _error_message
+    assert needle in _error_message(json.dumps({"error_details": {"message": "x"}}), code)
+
+
+def test_check_access_reports_per_endpoint(monkeypatch):
+    monkeypatch.setenv("APOLLO_API_KEY", "k")
+    allowed = {"organizations/enrich"}
+    monkeypatch.setattr(apollo, "_post",
+                        lambda path, payload: {"organization": {}} if path in allowed
+                        else {"error": "needs a paid Apollo plan"})
+    rows = apollo.check_access()
+    assert [ok for _, ok, _ in rows] == [False, False, True]
+    assert all("paid Apollo plan" in d for _, ok, d in rows if not ok)
+
+
+def test_check_access_probes_cannot_match_so_cost_nothing():
+    # Credits are charged only when data is found, so the probe person must be
+    # guaranteed not to match.
+    for label, _, payload in apollo.PROBE_ENDPOINTS:
+        for d in payload.get("details", []):
+            assert d["domain"] == "example.com"
+            assert d["last_name"] == "Vmpwq"
+
+
+def test_check_access_without_a_key(monkeypatch):
+    monkeypatch.delenv("APOLLO_API_KEY", raising=False)
+    assert all(not ok and "APOLLO_API_KEY" in d for _, ok, d in apollo.check_access())

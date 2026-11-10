@@ -54,7 +54,7 @@ $ ./cf-run queue                       # one confirmation rewrote all of them
 | `check` | unit tests **+** golden-set regression gate |
 | `eval` | scorecard only |
 | `stats` | reply rate, locked formats, totals |
-| `enrich <domain>` | Apollo.io (optional, needs `APOLLO_API_KEY`); `--dry-run` spends no credits |
+| `enrich <domain>` | Apollo.io (optional, **paid plan**, needs `APOLLO_API_KEY`); `--check` tests access, `--dry-run` spends no credits |
 | `lessons --add "..."` | record a research heuristic that worked |
 
 ## How ranking works
@@ -138,7 +138,22 @@ from a confirmed `mary-jane.watson@`.
 
 ## Apollo.io (optional)
 
-`export APOLLO_API_KEY=...` enables it; everything works without it.
+`export APOLLO_API_KEY=...` enables it, or put it in `.env` (gitignored, see
+`.env.example`). Everything else works without it.
+
+> **Apollo's people endpoints require a paid plan.** On the Free plan
+> `mixed_people/api_search`, `mixed_people/search`, `people/match` and
+> `people/bulk_match` all return `403 API_INACCESSIBLE` — refused *even with a
+> master key*. Only `organizations/enrich` is available, and it returns no
+> addresses, no people and no format, so it cannot help here. Check any key
+> with:
+>
+> ```bash
+> ./cf-run enrich <domain> --check    # spends no credits
+> ```
+>
+> Until the plan is upgraded, web research via the `contact-finder` skill is
+> the working path — and it is the primary path by design.
 
 Apollo's shape drives how it's used:
 

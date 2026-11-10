@@ -98,10 +98,21 @@ When unsure, leave it false.
 
 ## Apollo (optional, costs credits)
 
-Only if `APOLLO_API_KEY` is set. Apollo's People Search is free but masks last
-names and returns no addresses; enrichment returns both but costs credits. The
-command handles that split — search first, the role scorer gates spending, then
-enrich only the people worth emailing.
+Only if `APOLLO_API_KEY` is set **and the account is on a paid plan**. Apollo's
+people endpoints return `403 API_INACCESSIBLE` on the Free plan — refused even
+with a master key — so check before relying on it:
+
+```bash
+./cf-run enrich stripe.com --check     # spends no credits
+```
+
+If that reports no people endpoints, do not keep trying Apollo. Web research is
+the working path, and it is the primary path anyway.
+
+When it *is* available: People Search is free but masks last names and returns
+no addresses; enrichment returns both but costs credits. The command handles
+that split — search first, the role scorer gates spending, then enrich only the
+people worth emailing.
 
 ```bash
 ./cf-run enrich stripe.com --dry-run   # see who is there, spend nothing

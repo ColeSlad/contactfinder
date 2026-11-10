@@ -8,4 +8,8 @@ if [ ! -x "$PY" ]; then
   exit 1
 fi
 cd "$HERE"
+# Load secrets from .env if present (gitignored; e.g. APOLLO_API_KEY=...).
+if [ -f "$HERE/.env" ]; then
+  set -a; . "$HERE/.env"; set +a
+fi
 exec "$PY" -m cf.cli "$@"

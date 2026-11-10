@@ -107,6 +107,39 @@ def is_masked(name: str) -> bool:
     return "*" in (name or "")
 
 
+UPGRADE_URL = "https://www.apollo.io/pricing"
+
+
+def _error_message(body: str, code: int) -> str:
+    """Surface Apollo's own explanation rather than a bare status code.
+
+    Apollo returns a structured `error_details` object; the flat `error` and
+    `error_code` fields are deprecated (sunset 2027-02-16), so prefer the
+    former and fall back to the latter.
+    """
+    msg = ""
+    error_code = ""
+    try:
+        det = json.loads(body) or {}
+        msg = ((det.get("error_details") or {}).get("message")
+               or det.get("error") or "")
+        error_code = det.get("error_code") or ""
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+    msg = msg or f"HTTP {code} from Apollo"
+
+    if code == 403 or error_code == "API_INACCESSIBLE":
+        # Not a key-permissions problem: Apollo's people endpoints require a
+        # paid plan and are refused even with a master key.
+        return (f"{msg} (HTTP {code}) -- this endpoint needs a paid Apollo plan. "
+                f"See {UPGRADE_URL}")
+    if code == 401:
+        return f"{msg} (HTTP 401) -- the API key was rejected."
+    if code == 429:
+        return f"{msg} (HTTP 429) -- rate limited; try again later."
+    return f"{msg} (HTTP {code})"
+
+
 def _post(path: str, payload: dict) -> dict | None:
     """Call Apollo, or return None when disabled / a dict with 'error'."""
     key = api_key()
@@ -122,16 +155,42 @@ def _post(path: str, payload: dict) -> dict | None:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
-        if exc.code == 403:
-            return {"error": "403 from Apollo. People Search needs a master API "
-                             "key; check the key's permissions and plan."}
-        if exc.code == 401:
-            return {"error": "401 from Apollo: the API key was rejected."}
-        if exc.code == 429:
-            return {"error": "429 from Apollo: rate limited, try again later."}
-        return {"error": f"HTTP {exc.code} from Apollo"}
+        try:
+            body = exc.read().decode()
+        except OSError:
+            body = ""
+        return {"error": _error_message(body, exc.code)}
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
         return {"error": str(exc)}
+
+
+# Probed by `enrich --check`. The person payload deliberately cannot match, so
+# the probe costs no credits (Apollo charges only when data is found).
+PROBE_ENDPOINTS = [
+    ("people search", SEARCH_PATH,
+     {"person_titles": ["university recruiter"],
+      "q_organization_domains_list": ["example.com"], "per_page": 1}),
+    ("people enrichment", ENRICH_PATH,
+     {"details": [{"first_name": "Zzqx", "last_name": "Vmpwq", "domain": "example.com"}]}),
+    ("organization enrichment", "organizations/enrich", {"domain": "example.com"}),
+]
+
+
+def check_access() -> list[tuple[str, bool, str]]:
+    """Report which Apollo endpoints this key's plan actually allows.
+
+    Returns (label, ok, detail) per endpoint. Spends no credits.
+    """
+    out = []
+    for label, path, payload in PROBE_ENDPOINTS:
+        res = _post(path, payload)
+        if res is None:
+            out.append((label, False, "APOLLO_API_KEY is not set"))
+        elif "error" in res:
+            out.append((label, False, res["error"]))
+        else:
+            out.append((label, True, "accessible"))
+    return out
 
 
 def search_people(domain: str, titles: list | None = None,

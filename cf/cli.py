@@ -210,8 +210,23 @@ def cmd_enrich(a, store, cfg):
     credits, so role relevance gates spending."""
     if not apollo.enabled():
         print("APOLLO_API_KEY is not set, so enrichment is disabled.")
-        print("Everything else works without it; export APOLLO_API_KEY to enable.")
+        print("Everything else works without it; export APOLLO_API_KEY to enable")
+        print("or put it in a .env file (gitignored).")
         return 1
+    if a.check:
+        print("Apollo endpoint access for this key (no credits spent):\n")
+        rows = apollo.check_access()
+        for label, ok, detail in rows:
+            print(f"  [{'OK ' if ok else 'NO '}] {label}")
+            if not ok:
+                print(f"         {detail}")
+        people_ok = any(ok for label, ok, _ in rows if "people" in label)
+        if not people_ok:
+            print("\nNo people endpoints are available, so `enrich` cannot find "
+                  "contacts.\nWeb research via the contact-finder skill is the "
+                  "working path on this plan.")
+            return 1
+        return 0
     ap = cfg.get("apollo", {})
     titles = a.titles.split(",") if a.titles else ap.get("titles")
     cands, rep = apollo.find_contacts(
@@ -221,6 +236,8 @@ def cmd_enrich(a, store, cfg):
         dry_run=a.dry_run)
     print(rep.summary())
     if rep.errors and not cands:
+        if any("paid Apollo plan" in e for e in rep.errors):
+            print("\nRun `enrich --check` to see which endpoints this key allows.")
         return 1
     if a.dry_run:
         print("\n-- dry run, no credits spent, last names still masked --")
@@ -313,6 +330,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("domain")
     s.add_argument("--dry-run", action="store_true",
                    help="search only; spend no credits")
+    s.add_argument("--check", action="store_true",
+                   help="report which Apollo endpoints this key's plan allows")
     s.add_argument("--titles", default="",
                    help="comma-separated job titles to search (overrides config)")
     s.add_argument("--per-page", type=int, default=0)
