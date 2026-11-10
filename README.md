@@ -75,6 +75,20 @@ Role relevance is also a **hard gate**, not only a weighted term: without it a
 software engineer with a pristine source and a fresh date clears `min_score` on
 source quality and recency alone.
 
+### Published role inboxes
+
+`campusrecruiting@`, `careers@`, `interns@` — monitored, published, and needing
+no inference. They turned up at **three of the first three companies
+researched**, and at one they were the only contact found, so they are
+first-class targets. Ingest one by passing an `email` with no `name`.
+
+They are scored on the alias instead of a job title (`campusrecruiting@` 1.00 →
+`careers@` 0.60 → `hr@` 0.40 → `info@` 0.20, which the gate then excludes), and
+seniority is held at 1.00 since an inbox has none. Critically, **a role inbox
+never teaches an email format**: `careers@` implies nothing about whether staff
+use `first.last` or `flast`, so confirming a format from one would corrupt
+every guess at that company.
+
 ## How it improves itself
 
 Three mechanisms, each **gated on sample size** so thin data cannot make it
@@ -111,10 +125,10 @@ These distinctions are the difference between learning and corrupting itself:
 ## How it tests itself
 
 ```bash
-./cf-run check     # 230 unit tests + the golden-set gate
+./cf-run check     # 274 unit tests + the golden-set gate
 ```
 
-`eval` scores nine sections against `eval/golden.yaml` and appends the result to
+`eval` scores ten sections against `eval/golden.yaml` and appends the result to
 `eval/history.jsonl`. `--gate` fails on any failing case or any score below the
 best ever recorded.
 
