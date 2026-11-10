@@ -1,0 +1,21 @@
+# --- Real contact data must never be committed (this repo is public) ---
+data/
+*.db
+*.sqlite
+*.sqlite3
+exports/
+outcomes/
+inbox/
+*.contacts.csv
+*.contacts.json
+gmail_dump*.json
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
