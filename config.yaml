@@ -19,6 +19,31 @@ run:
 known_formats: {}
   # example.com: first.last
 
+# Apollo.io enrichment (optional; needs APOLLO_API_KEY).
+# People Search is free but returns masked last names; People Enrichment costs
+# credits. So search runs first and only roles scoring at least
+# min_title_score get enriched. Use `enrich --dry-run` to look before paying.
+apollo:
+  min_title_score: 0.45
+  per_page: 25
+  # Apollo requires job titles to search for. Override if a company uses
+  # unusual wording.
+  titles:
+    - university recruiter
+    - campus recruiter
+    - university recruiting
+    - campus recruiting
+    - early career recruiter
+    - early talent
+    - emerging talent
+    - intern program manager
+    - student programs
+    - technical recruiter
+    - recruiting coordinator
+  # Inclusive filter. Omits c_suite/owner/founder/partner/vp: they do not
+  # answer internship cold email, so enriching them wastes credits.
+  seniorities: [entry, senior, manager, director, head]
+
 # Override the global format prior or scoring weights only if you have reason
 # to. Leaving these empty lets `cf learn` tune them from your actual results.
 weights: {}

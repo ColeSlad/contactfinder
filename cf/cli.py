@@ -6,7 +6,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from . import enrich, evaluate as ev
+from . import apollo, evaluate as ev
 from .config import effective_weights, load_companies, load_config
 from .export import to_csv, to_table
 from .learn import learn as run_learn
@@ -206,24 +206,35 @@ def cmd_stats(a, store, cfg):
 
 
 def cmd_enrich(a, store, cfg):
-    if not enrich.enabled():
-        print("HUNTER_API_KEY is not set, so enrichment is disabled.")
-        print("Everything else works without it; export HUNTER_API_KEY to enable.")
+    """Find contacts at a domain via Apollo. Search is free; enrichment costs
+    credits, so role relevance gates spending."""
+    if not apollo.enabled():
+        print("APOLLO_API_KEY is not set, so enrichment is disabled.")
+        print("Everything else works without it; export APOLLO_API_KEY to enable.")
         return 1
-    res = enrich.domain_search(a.domain)
-    if not res or "error" in (res or {}):
-        print(f"enrichment failed: {(res or {}).get('error', 'no response')}")
+    ap = cfg.get("apollo", {})
+    titles = a.titles.split(",") if a.titles else ap.get("titles")
+    cands, rep = apollo.find_contacts(
+        a.domain, titles=titles, seniorities=ap.get("seniorities"),
+        per_page=a.per_page or ap.get("per_page", 25),
+        min_title_score=ap.get("min_title_score", 0.45),
+        dry_run=a.dry_run)
+    print(rep.summary())
+    if rep.errors and not cands:
         return 1
-    print(f"format reported: {res.get('raw_pattern')} -> {res.get('pattern')}")
-    if res.get("pattern"):
-        store.add_confirmation(a.domain, res["pattern"],
-                               f"__format__@{a.domain}", "", "enrichment_api")
-        print(f"recorded as a format confirmation for {a.domain}")
-    cands = enrich.to_candidates(res, a.domain)
-    if cands:
-        print(ingest_candidates(store, cands, cfg, today=a.today).summary())
-    else:
-        print("no contacts returned")
+    if a.dry_run:
+        print("\n-- dry run, no credits spent, last names still masked --")
+        for c in cands:
+            flag = " (masked)" if c.get("masked") else ""
+            print(f"  {c['name']}{flag:9}  {c['title']}")
+        print(f"\n{len(cands)} would be enriched. Re-run without --dry-run to "
+              f"spend credits.")
+        return 0
+    if not cands:
+        print("no contacts to ingest")
+        return 0
+    print()
+    print(ingest_candidates(store, cands, cfg, today=a.today).summary())
     rescore_all(store, cfg, today=a.today)
     return 0
 
@@ -298,8 +309,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     add("stats", cmd_stats, "summarise what the database holds")
 
-    s = add("enrich", cmd_enrich, "pull contacts from Hunter.io (needs HUNTER_API_KEY)")
+    s = add("enrich", cmd_enrich, "find contacts via Apollo (needs APOLLO_API_KEY)")
     s.add_argument("domain")
+    s.add_argument("--dry-run", action="store_true",
+                   help="search only; spend no credits")
+    s.add_argument("--titles", default="",
+                   help="comma-separated job titles to search (overrides config)")
+    s.add_argument("--per-page", type=int, default=0)
 
     s = add("lessons", cmd_lessons, "read or append research lessons")
     s.add_argument("--add", default="", help="append a lesson")

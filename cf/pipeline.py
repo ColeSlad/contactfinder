@@ -52,6 +52,12 @@ def ingest_candidates(store, cands: list[dict], cfg: dict | None = None,
         if not name or not domain:
             rep.skipped.append(f"missing name or domain: {raw!r:.80}")
             continue
+        if "*" in name:
+            # Obfuscated names ('Do***e') arrive from provider search endpoints.
+            # slug() would strip the asterisks and yield 'doe', fabricating a
+            # plausible-looking address, so refuse them outright.
+            rep.skipped.append(f"obfuscated name, cannot infer an address: {name!r}")
+            continue
 
         store.upsert_company(domain, raw.get("company", ""), raw.get("careers_url", ""))
         evidence = evidence_with_overrides(store, domain, cfg)

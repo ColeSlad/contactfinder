@@ -96,6 +96,27 @@ An address you *inferred* is not verified. Marking a guess as verified writes a
 false format confirmation and poisons every future prediction for that company.
 When unsure, leave it false.
 
+## Apollo (optional, costs credits)
+
+Only if `APOLLO_API_KEY` is set. Apollo's People Search is free but masks last
+names and returns no addresses; enrichment returns both but costs credits. The
+command handles that split — search first, the role scorer gates spending, then
+enrich only the people worth emailing.
+
+```bash
+./cf-run enrich stripe.com --dry-run   # see who is there, spend nothing
+./cf-run enrich stripe.com             # enrich on-target roles and ingest
+./cf-run enrich stripe.com --titles "university recruiter,campus recruiting"
+```
+
+Always `--dry-run` first on a company you have not tried. If the roles coming
+back look wrong, fix `--titles` before paying for anything.
+
+Apollo complements web research rather than replacing it: it is strong on names
+and titles at well-known companies, and weaker on small or very recent
+employers where a careers page or career-fair listing still wins. A 403 means
+the key lacks master-key permissions.
+
 ## Processing outcomes (the feedback loop)
 
 This is what makes the framework improve. After outreach, read the mailbox via

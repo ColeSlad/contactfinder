@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from .apollo import DEFAULT_SENIORITIES, DEFAULT_TITLES
 from .normalize import domain_of
 from .patterns import GLOBAL_PRIOR
 from .score import DEFAULT_WEIGHTS
@@ -16,6 +17,8 @@ DEFAULT_CONFIG = {
     "weights": {},
     "global_prior": {},
     "known_formats": {},
+    "apollo": {"titles": DEFAULT_TITLES, "seniorities": DEFAULT_SENIORITIES,
+               "min_title_score": 0.45, "per_page": 25},
     "run": {"min_score": 0.45, "max_contacts_per_company": 5,
             # Hard exclusions. Role relevance is a gate, not a preference: a
             # software engineer with a fresh, well-sourced profile can other-
@@ -36,6 +39,7 @@ def load_config(path: str | Path = "config.yaml") -> dict:
     raw = load_yaml(path, {})
     cfg = {**DEFAULT_CONFIG, **raw}
     cfg["run"] = {**DEFAULT_CONFIG["run"], **(raw.get("run") or {})}
+    cfg["apollo"] = {**DEFAULT_CONFIG["apollo"], **(raw.get("apollo") or {})}
     cfg["known_formats"] = {domain_of(k): v for k, v in (raw.get("known_formats") or {}).items()}
     return cfg
 

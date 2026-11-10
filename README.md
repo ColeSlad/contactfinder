@@ -54,7 +54,7 @@ $ ./cf-run queue                       # one confirmation rewrote all of them
 | `check` | unit tests **+** golden-set regression gate |
 | `eval` | scorecard only |
 | `stats` | reply rate, locked formats, totals |
-| `enrich <domain>` | Hunter.io (optional, needs `HUNTER_API_KEY`) |
+| `enrich <domain>` | Apollo.io (optional, needs `APOLLO_API_KEY`); `--dry-run` spends no credits |
 | `lessons --add "..."` | record a research heuristic that worked |
 
 ## How ranking works
@@ -111,7 +111,7 @@ These distinctions are the difference between learning and corrupting itself:
 ## How it tests itself
 
 ```bash
-./cf-run check     # 211 unit tests + the golden-set gate
+./cf-run check     # 230 unit tests + the golden-set gate
 ```
 
 `eval` scores nine sections against `eval/golden.yaml` and appends the result to
@@ -136,6 +136,45 @@ first=`Dr.`), a regex that couldn't match "recruit**er**" (so "Recruiter
 abbreviation support, and hyphen-lossy reverse mapping that learned nothing
 from a confirmed `mary-jane.watson@`.
 
+## Apollo.io (optional)
+
+`export APOLLO_API_KEY=...` enables it; everything works without it.
+
+Apollo's shape drives how it's used:
+
+- **People Search is free but masks last names** (`Do***e`) and returns no
+  addresses — it can only discover who exists.
+- **People Enrichment returns the real name and address but costs credits.**
+
+So search runs first, the existing role scorer gates which people are worth
+paying for, and only those get enriched — batched 10 at a time through
+`bulk_match`. Look before you pay:
+
+```bash
+./cf-run enrich stripe.com --dry-run     # masked names, no credits spent
+./cf-run enrich stripe.com               # enriches only on-target roles
+```
+
+```
+apollo: 24 found, 6 enriched, 6 credits used
+  skipped 15 off-target role(s) before spending credits
+  skipped 3 with no address on file
+```
+
+Two safeguards worth knowing about:
+
+- **A masked name is refused, never cleaned.** `slug("Do***e")` is `"doe"` — the
+  asterisks vanish and it becomes a confident-looking lie that could be Doyle,
+  Dodge or Doke. Both the adapter and the pipeline reject names containing `*`.
+- **`email_status: invalid` is discarded**, not ingested with low confidence.
+
+Apollo doesn't report a company's address format, but we get it anyway: a
+verified address plus a real name reverse-maps through `pattern_of()`, which
+locks the company.
+
+Note: People Search needs a **master API key**; a 403 is reported with that
+hint rather than a bare status code.
+
 ## Privacy
 
 The GitHub remote is public, so `data/`, `exports/`, and any contact dumps are
@@ -150,7 +189,7 @@ people whose job is to hear from candidates.
 ```
 cf/normalize.py   names, domains, titles          cf/pipeline.py   research -> scored contacts
 cf/patterns.py    address formats + priors        cf/export.py     CSV / table output
-cf/score.py       ranking                         cf/enrich.py     Hunter.io (optional)
+cf/score.py       ranking                         cf/apollo.py     Apollo.io (optional)
 cf/mail.py        bounce + reply classification   cf/evaluate.py   self-evaluation
 cf/store.py       sqlite                          cf/cli.py        commands
 cf/learn.py       self-improvement                cf/config.py     config precedence
