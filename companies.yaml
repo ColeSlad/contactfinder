@@ -24,9 +24,11 @@ companies:
   - { name: "Anduril", domain: anduril.com, priority: high }
   - { name: "Anthropic", domain: anthropic.com, priority: high }
   - { name: "Applied Intuition", domain: appliedintuition.com, priority: high }
+  - { name: "Asana", domain: asana.com, priority: high }
   - { name: "Autodesk", domain: autodesk.com, priority: high }
   - { name: "Brex", domain: brex.com, priority: high }
   - { name: "Chime", domain: chime.com, priority: high }
+  - { name: "Citadel", domain: citadel.com, priority: high, notes: "Citadel Securities (citadelsecurities.com) is a separate firm on the same Proofpoint cluster; a format confirmed at one likely transfers" }
   - { name: "Cloudflare", domain: cloudflare.com, priority: high }
   - { name: "Coinbase", domain: coinbase.com, priority: high }
   - { name: "CoreWeave", domain: coreweave.com, priority: high }
@@ -67,6 +69,7 @@ companies:
   - { name: "Squarepoint", domain: squarepoint-capital.com, priority: high }
   - { name: "Stripe", domain: stripe.com, priority: high }
   - { name: "Tower Research", domain: tower-research.com, priority: high }
+  - { name: "Two Sigma", domain: twosigma.com, priority: high, notes: "runs its own mail infrastructure (mxi2.dft.dmz.twosigma.com)" }
   - { name: "Vanta", domain: vanta.com, priority: high }
   - { name: "Vercel", domain: vercel.com, priority: high }
   - { name: "Verkada", domain: verkada.com, priority: high }
@@ -78,6 +81,7 @@ companies:
   - { name: "1Password", domain: 1password.com, priority: normal }
   - { name: "Abnormal AI", domain: abnormal.ai, priority: normal }
   - { name: "Abridge", domain: abridge.com, priority: normal }
+  - { name: "Airtable", domain: airtable.com, priority: normal }
   - { name: "Airwallex", domain: airwallex.com, priority: normal }
   - { name: "Baseten", domain: baseten.co, priority: normal }
   - { name: "Bolt / StackBlitz", domain: stackblitz.com, priority: normal }
