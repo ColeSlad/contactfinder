@@ -1,0 +1,27 @@
+# Target companies for SWE internship outreach.
+# `domain` is required and anchors email inference. Edit freely -- this seed
+# list is a starting point, not a recommendation.
+#
+# priority: high | normal | low   (high-priority companies are researched first)
+
+companies:
+  - { name: Stripe,          domain: stripe.com,      careers_url: "https://stripe.com/jobs/university", priority: high }
+  - { name: Databricks,      domain: databricks.com,  careers_url: "https://www.databricks.com/company/careers/university-recruiting", priority: high }
+  - { name: Figma,           domain: figma.com,       careers_url: "https://www.figma.com/careers/", priority: high }
+  - { name: Ramp,            domain: ramp.com,        careers_url: "https://ramp.com/careers", priority: high }
+  - { name: Plaid,           domain: plaid.com,       careers_url: "https://plaid.com/careers/", priority: normal }
+  - { name: Snowflake,       domain: snowflake.com,   careers_url: "https://careers.snowflake.com/us/en/university-recruiting", priority: normal }
+  - { name: Datadog,         domain: datadoghq.com,   careers_url: "https://careers.datadoghq.com/university/", priority: normal }
+  - { name: Cloudflare,      domain: cloudflare.com,  careers_url: "https://www.cloudflare.com/careers/", priority: normal }
+  - { name: Coinbase,        domain: coinbase.com,    careers_url: "https://www.coinbase.com/careers", priority: normal }
+  - { name: Robinhood,       domain: robinhood.com,   careers_url: "https://careers.robinhood.com/", priority: normal }
+  - { name: Airtable,        domain: airtable.com,    careers_url: "https://airtable.com/careers", priority: normal }
+  - { name: Asana,           domain: asana.com,       careers_url: "https://asana.com/jobs", priority: normal }
+  - { name: Notion,          domain: makenotion.com,  careers_url: "https://www.notion.so/careers", priority: normal }
+  - { name: Vercel,          domain: vercel.com,      careers_url: "https://vercel.com/careers", priority: low }
+  - { name: Anduril,         domain: anduril.com,     careers_url: "https://www.anduril.com/careers/", priority: normal }
+  - { name: Two Sigma,       domain: twosigma.com,    careers_url: "https://careers.twosigma.com/careers/Home", priority: high }
+  - { name: Jane Street,     domain: janestreet.com,  careers_url: "https://www.janestreet.com/join-jane-street/", priority: high }
+  - { name: Citadel,         domain: citadel.com,     careers_url: "https://www.citadel.com/careers/students/", priority: normal }
+  - { name: Palantir,        domain: palantir.com,    careers_url: "https://www.palantir.com/careers/", priority: normal }
+  - { name: Roblox,          domain: roblox.com,      careers_url: "https://careers.roblox.com/", priority: low }

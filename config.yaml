@@ -1,0 +1,21 @@
+# ContactFinder configuration.
+# Precedence: values learned from real outcomes (stored in the DB) override
+# anything here. Use this file to pin facts you already know.
+
+run:
+  # Minimum score for a contact to reach the outreach export.
+  min_score: 0.45
+  # Cap per company so one employer can't flood a batch.
+  max_contacts_per_company: 5
+
+# Pin a company's email format when you know it for certain. Treated as a
+# confirmed hit, which locks inference for everyone at that domain.
+# Valid formats: first.last, firstlast, flast, first, f.last, first_last,
+#                firstl, first.l, last.first, lastfirst, first-last, last, fl
+known_formats: {}
+  # example.com: first.last
+
+# Override the global format prior or scoring weights only if you have reason
+# to. Leaving these empty lets `cf learn` tune them from your actual results.
+weights: {}
+global_prior: {}
