@@ -1,0 +1,148 @@
+# Golden set for `cf eval`.
+#
+# Deliberately SYNTHETIC: invented companies on the reserved .test TLD (RFC
+# 2606) with a declared email format. Real recruiters' inferred addresses are
+# never committed here -- this repo is public, and a fixture file is the wrong
+# place for other people's contact details. The machinery under test (format
+# inference, lock transfer, ranking) is format-level, so synthetic fixtures
+# exercise it just as well.
+
+# Can we infer the right address given only a name and the domain's format?
+format_cases:
+  - domain: northwind-labs.test
+    format: first.last
+    people:
+      - { name: "Jane Doe",          email: "jane.doe@northwind-labs.test" }
+      - { name: "Carlos Mendez",     email: "carlos.mendez@northwind-labs.test" }
+      - { name: "Renée Dupré",       email: "renee.dupre@northwind-labs.test" }
+  - domain: tessellate.test
+    format: flast
+    people:
+      - { name: "Bob Smith",         email: "bsmith@tessellate.test" }
+      - { name: "Priya Raghunathan", email: "praghunathan@tessellate.test" }
+  - domain: gridpoint-io.test
+    format: firstlast
+    people:
+      - { name: "Ada Okafor",        email: "adaokafor@gridpoint-io.test" }
+      - { name: "Jane van der Berg", email: "janevanderberg@gridpoint-io.test" }
+  - domain: halcyon-systems.test
+    format: first
+    people:
+      - { name: "Mira Patel",        email: "mira@halcyon-systems.test" }
+  - domain: sparkplug.test
+    format: f.last
+    people:
+      - { name: "Tom Becker",        email: "t.becker@sparkplug.test" }
+  # Messy real-world names. These caught four genuine bugs on first run.
+  - domain: thornbury.test
+    format: first.last
+    people:
+      - { name: "Dr. Elena Vasquez",      email: "elena.vasquez@thornbury.test" }
+      - { name: "Sean O'Brien",           email: "sean.obrien@thornbury.test" }
+      - { name: "Anne Marie Smith-Jones", email: "anne.smithjones@thornbury.test" }
+      - { name: "Jean-Luc de la Fontaine", email: "jeanluc.delafontaine@thornbury.test" }
+      - { name: "José Álvarez-Ramírez",   email: "jose.alvarezramirez@thornbury.test" }
+
+# Name parsing in isolation, so a regression is attributed precisely.
+name_cases:
+  - { raw: "Jane Q. Doe Jr.",          first: "Jane",      last: "Doe" }
+  - { raw: "Doe, Jane Q.",             first: "Jane",      last: "Doe" }
+  - { raw: "Jane \"JJ\" Doe",           first: "Jane",      last: "Doe" }
+  - { raw: "Jane van der Berg",        first: "Jane",      last: "van der Berg" }
+  - { raw: "Maria de la Cruz",         first: "Maria",     last: "de la Cruz" }
+  - { raw: "Dr. Elena Vasquez",        first: "Elena",     last: "Vasquez" }
+  - { raw: "Prof. Alan Turing",        first: "Alan",      last: "Turing" }
+  - { raw: "Jane Doe, PhD",            first: "Jane",      last: "Doe" }
+  - { raw: "Jane Doe - University Recruiter", first: "Jane", last: "Doe" }
+  - { raw: "Mary-Jane Watson",         first: "Mary-Jane", last: "Watson" }
+
+# Role tiering. `tier` is the expected label; `min`/`max` bound the score.
+title_cases:
+  - { title: "University Recruiter",            tier: university-recruiting, min: 0.95 }
+  - { title: "Univ. Recruiting Partner",        tier: university-recruiting, min: 0.95 }
+  - { title: "Recruiter (Campus)",              tier: university-recruiting, min: 0.90 }
+  - { title: "Sr. Recruiter, University Programs", tier: university-recruiting, min: 0.90 }
+  - { title: "Manager, Emerging Talent",        tier: early-career,          min: 0.95 }
+  - { title: "Early-Career Programs Lead",      tier: early-career,          min: 0.95 }
+  - { title: "Student Programs Specialist",     tier: intern-program,        min: 0.90 }
+  - { title: "Intern & New Grad Hiring",        tier: intern-program,        min: 0.90 }
+  - { title: "Technical Recruiter, Engineering", tier: technical-recruiting, min: 0.65, max: 0.75 }
+  - { title: "Technical Sourcer, University",   tier: university-sourcing,   min: 0.55, max: 0.65 }
+  - { title: "Talent Sourcer",                  tier: sourcing,              max: 0.50 }
+  - { title: "People Partner",                  tier: people-ops,            max: 0.40 }
+  - { title: "Senior Software Engineer",        tier: unrelated,             max: 0.15 }
+  - { title: "Chief People Officer",            tier: people-leadership,     max: 0.45 }
+
+# Reverse-mapping a confirmed address to the format it proves. This is how one
+# verified contact teaches us a whole company's format.
+reverse_cases:
+  - { email: "jane.doe@x.test",            name: "Jane Doe",         format: first.last }
+  - { email: "jdoe@x.test",                name: "Jane Doe",         format: flast }
+  - { email: "janedoe@x.test",             name: "Jane Doe",         format: firstlast }
+  - { email: "jane@x.test",                name: "Jane Doe",         format: first }
+  - { email: "j.doe@x.test",               name: "Jane Doe",         format: f.last }
+  - { email: "jane_doe@x.test",            name: "Jane Doe",         format: first_last }
+  - { email: "doe.jane@x.test",            name: "Jane Doe",         format: last.first }
+  - { email: "mary-jane.watson@x.test",    name: "Mary-Jane Watson", format: first.last }
+  - { email: "anne.smith-jones@x.test",    name: "Anne Smith-Jones", format: first.last }
+
+# Does confirming ONE address at a company unlock the rest? This is the
+# framework's core claim, so it is measured explicitly.
+lock_transfer_cases:
+  - domain: northwind-labs.test
+    confirm: { name: "Jane Doe", email: "jane.doe@northwind-labs.test" }
+    then_predict: { name: "Samuel Oyelaran", email: "samuel.oyelaran@northwind-labs.test" }
+  - domain: tessellate.test
+    confirm: { name: "Bob Smith", email: "bsmith@tessellate.test" }
+    then_predict: { name: "Grace Hopper", email: "ghopper@tessellate.test" }
+  - domain: gridpoint-io.test
+    confirm: { name: "Ada Okafor", email: "adaokafor@gridpoint-io.test" }
+    then_predict: { name: "Lin Zhou", email: "linzhou@gridpoint-io.test" }
+
+# Must a better-fitting contact outrank a worse one? Pairwise, higher first.
+ranking_pairs:
+  - [ "University Recruiter",                "Senior Software Engineer" ]
+  - [ "Campus Recruiting Coordinator",       "HR Generalist" ]
+  - [ "Early Career Talent Partner",         "Technical Recruiter" ]
+  - [ "University Recruiting Manager",       "VP of Talent Acquisition" ]
+  - [ "Technical Recruiter, Engineering",    "Talent Sourcer" ]
+  - [ "Intern Program Manager",              "People Operations Associate" ]
+  - [ "Head of Early Career Recruiting",     "Engineering Manager" ]
+  - [ "Recruiting Coordinator",              "Chief People Officer" ]
+
+# Bounce and reply classification: only `hard` may downweight a format.
+mail_cases:
+  - { subject: "Undelivered Mail Returned to Sender", body: "550 5.1.1 user unknown", expect: hard }
+  - { subject: "Delivery Status Notification (Failure)", body: "550 5.7.1 rejected due to spam content", expect: blocked }
+  - { subject: "Undeliverable", body: "452 4.2.2 mailbox full", expect: soft }
+  - { subject: "Mail delivery failed", body: "550 5.1.10 recipient not found", expect: hard }
+  - { subject: "Delivery incomplete", body: "421 4.7.0 try again later", expect: soft }
+  - { subject: "Re: SWE internship", body: "Happy to chat next week.", expect: none }
+
+reply_cases:
+  - { from: "jane@x.test", subject: "Re: internship", body: "Send me your resume.", expect: human }
+  - { from: "jane@x.test", subject: "Automatic reply: Out of office", body: "Back Dec 1.", expect: auto }
+  - { from: "MAILER-DAEMON@x.test", subject: "Undelivered Mail Returned to Sender", body: "550", expect: bounce }
+  - { from: "noreply@x.test", subject: "Your application", body: "Thanks for applying.", expect: auto }
+
+# --------------------------------------------------------------------------
+# Known limitations: cases that genuinely DO NOT work yet. Reported by
+# `cf eval` but deliberately NOT scored, so the overall number can't be
+# inflated by listing them. If one starts passing, eval says so and it can be
+# promoted into the scored set above.
+known_limitations:
+  - what: "Truncated surnames"
+    detail: "Companies that cut the surname to a fixed width (evasque@ for Elena Vasquez) are not in the format catalog."
+    probe: { kind: reverse, email: "evasque@x.test", name: "Elena Vasquez", format: any }
+  - what: "Surname-first name order"
+    detail: "For 'Ng Wei Jie' or 'Li Wei' we cannot tell given name from family name, so slugs may be swapped."
+    probe: { kind: reverse, email: "jwei@x.test", name: "Li Wei", format: any }
+  - what: "lastf format"
+    detail: "Surname plus first initial (obriens@) is a rare format not in the catalog."
+    probe: { kind: reverse, email: "obriens@x.test", name: "Sean O'Brien", format: any }
+  - what: "Hyphen-preserving generation"
+    detail: "We can RECOGNISE mary-jane.watson@ from a confirmation, but rank-1 generation emits the flattened maryjane.watson@."
+    probe: { kind: generate, name: "Mary-Jane Watson", domain: "x.test", format: first.last, email: "mary-jane.watson@x.test" }
+  - what: "Compound given names"
+    detail: "'Mary Beth Jones' is read as first=Mary, middle=Beth; a company using marybeth.jones@ will be missed."
+    probe: { kind: generate, name: "Mary Beth Jones", domain: "x.test", format: first.last, email: "marybeth.jones@x.test" }
