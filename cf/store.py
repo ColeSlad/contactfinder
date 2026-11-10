@@ -190,26 +190,39 @@ class Store:
         return int(cur.lastrowid or 0)
 
     def evidence_for(self, domain: str) -> dict:
-        """Per-pattern {hits, misses} for a domain, derived from facts on hand."""
-        ev: dict[str, dict[str, int]] = {}
+        """Per-pattern {hits, misses} for a domain, derived from facts on hand.
 
-        def bump(pattern: str, field: str, n: int = 1):
-            if not pattern:
-                return
-            ev.setdefault(pattern, {"hits": 0, "misses": 0})[field] += n
+        Counts *distinct proven addresses*, not outcome rows: one recruiter who
+        replies three times is one piece of evidence about the format, and a
+        person who appears in both confirmations and replies is counted once.
+        """
+        hits: dict[str, set] = {}
+        misses: dict[str, set] = {}
 
-        for r in self.db.execute("SELECT pattern FROM confirmations WHERE domain=?", (domain,)):
-            bump(r["pattern"], "hits")
+        def bump(bucket, pattern, identity):
+            if pattern and identity:
+                bucket.setdefault(pattern, set()).add(identity.lower())
+
+        for r in self.db.execute(
+                "SELECT pattern, email FROM confirmations WHERE domain=?", (domain,)):
+            bump(hits, r["pattern"], r["email"])
 
         rows = self.db.execute(
-            """SELECT o.kind AS kind, c.email_pattern AS pattern
+            """SELECT o.kind AS kind, c.email_pattern AS pattern,
+                      COALESCE(NULLIF(o.address,''), c.email) AS address
                  FROM outcomes o JOIN contacts c ON c.id = o.contact_id
                 WHERE c.company_domain = ?""", (domain,))
         for r in rows:
             if r["kind"] in HIT_KINDS:
-                bump(r["pattern"], "hits")
+                bump(hits, r["pattern"], r["address"])
             elif r["kind"] in MISS_KINDS:
-                bump(r["pattern"], "misses")
+                bump(misses, r["pattern"], r["address"])
+
+        ev: dict[str, dict[str, int]] = {}
+        for pattern in set(hits) | set(misses):
+            h = hits.get(pattern, set())
+            m = misses.get(pattern, set()) - h   # a proven address isn't a miss
+            ev[pattern] = {"hits": len(h), "misses": len(m)}
         return ev
 
     # ---------- settings ----------

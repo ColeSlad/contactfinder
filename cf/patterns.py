@@ -96,16 +96,21 @@ def pattern_of(email: str, name) -> str | None:
 def locked_pattern(evidence: dict | None) -> str | None:
     """The domain's format, when evidence makes it near-certain.
 
-    Requires at least one confirmed hit, no bounces against that format, and no
-    other format with more hits (which would mean contradictory evidence).
+    A hard bounce on a correctly-formatted address is ambiguous: the format may
+    be right and the person simply gone. So misses must *outweigh* hits to block
+    a lock (hits > 2*misses), rather than a single departed employee vetoing an
+    otherwise well-evidenced format. A rival format with as many hits means
+    genuinely contradictory evidence, and nothing locks.
     """
     if not evidence:
         return None
     scored = {p: (e.get("hits", 0), e.get("misses", 0)) for p, e in evidence.items()}
     best = max(scored.items(), key=lambda kv: kv[1][0], default=None)
-    if not best or best[1][0] < 1 or best[1][1] > 0:
+    if not best:
         return None
-    pattern, (hits, _) = best
+    pattern, (hits, misses) = best
+    if hits < 1 or hits <= misses * 2:
+        return None
     rivals = [h for p, (h, _) in scored.items() if p != pattern and h >= hits]
     return None if rivals else pattern
 
