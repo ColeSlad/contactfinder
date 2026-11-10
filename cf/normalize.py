@@ -4,6 +4,7 @@ import unicodedata
 from dataclasses import dataclass
 
 SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "phd", "mba", "md", "esq"}
+PREFIXES = {"dr", "mr", "mrs", "ms", "miss", "mx", "prof", "professor", "sir", "rev"}
 # Surname particles that belong to the last name ("van der Berg").
 PARTICLES = {"van", "von", "de", "del", "della", "di", "da", "dos", "du",
              "la", "le", "bin", "ibn", "al", "st", "ter", "ten",
@@ -15,9 +16,15 @@ def strip_accents(s: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
-def slug(s: str) -> str:
-    """Lowercase ASCII alphanumerics only. 'van der Berg' -> 'vanderberg'."""
-    return re.sub(r"[^a-z0-9]", "", strip_accents(s).lower())
+def slug(s: str, keep_hyphen: bool = False) -> str:
+    """Lowercase ASCII alphanumerics. 'van der Berg' -> 'vanderberg'.
+
+    Some companies preserve hyphens in compound names ('mary-jane.watson'), so
+    `keep_hyphen` produces that variant for reverse-mapping a known address.
+    """
+    allowed = r"[^a-z0-9-]" if keep_hyphen else r"[^a-z0-9]"
+    out = re.sub(allowed, "", strip_accents(s).lower())
+    return re.sub(r"-{2,}", "-", out).strip("-") if keep_hyphen else out
 
 
 @dataclass(frozen=True)
@@ -26,14 +33,18 @@ class Name:
     middle: str = ""
     last: str = ""
     raw: str = ""
+    # Some companies spell compound names 'mary-jane.watson' instead of
+    # flattening them. dataclasses.replace(n, keep_hyphen=True) yields that
+    # variant without a parallel set of accessors.
+    keep_hyphen: bool = False
 
     @property
     def f(self) -> str:
-        return slug(self.first)
+        return slug(self.first, self.keep_hyphen)
 
     @property
     def l(self) -> str:  # noqa: E743 - mirrors email-pattern vocabulary
-        return slug(self.last)
+        return slug(self.last, self.keep_hyphen)
 
     @property
     def fi(self) -> str:
@@ -67,6 +78,8 @@ def parse_name(full: str) -> Name:
 
     tokens = [t for t in s.split(" ") if t]
     tokens = [t for t in tokens if slug(t) not in SUFFIXES]
+    while len(tokens) > 1 and slug(tokens[0]) in PREFIXES:
+        tokens = tokens[1:]
     tokens = [t for t in tokens if slug(t)]
     if not tokens:
         return Name(raw=raw)

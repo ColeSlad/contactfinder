@@ -5,7 +5,7 @@ reveals the format for every other person there -- that is the highest-leverage
 thing this framework learns. `candidates()` blends a global prior over formats
 with per-domain evidence (confirmed hits, hard bounces) accumulated by learn.py.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .normalize import Name, parse_name
 
@@ -88,6 +88,11 @@ def pattern_of(email: str, name) -> str | None:
     if not local:
         return None
     matches = [p for p in BUILDERS if localpart(p, n) == local]
+    if not matches:
+        # Retry against hyphen-preserving slugs: plenty of companies spell
+        # compound names 'mary-jane.watson' rather than flattening them.
+        hy = replace(n, keep_hyphen=True)
+        matches = [p for p in BUILDERS if localpart(p, hy) == local]
     if not matches:
         return None
     return max(matches, key=lambda p: GLOBAL_PRIOR.get(p, 0.0))

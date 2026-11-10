@@ -13,11 +13,15 @@ from .normalize import normalize_title
 # Ordered: first match wins, so the most specific pattern must come first.
 # Scores encode who actually owns intern requisitions and answers cold email.
 TITLE_TIERS: list[tuple[str, float, str]] = [
-    (r"\b(university|campus)\b.*\b(recruit|talent|relations|program)", 1.00, "university-recruiting"),
-    (r"\b(early career|early talent|emerging talent|earlycareer)\b", 1.00, "early-career"),
-    (r"\b(intern|internship|new grad|new graduate|student)\b.*\b(program|recruit|talent|hiring)", 0.95, "intern-program"),
-    (r"\b(recruit|talent)\b.*\b(university|campus|early career|student|intern|new grad)", 0.95, "university-recruiting"),
-    (r"\b(university|campus) relations\b", 0.90, "university-relations"),
+    # UNI matches 'university', 'univ', 'uni'; recruit\w* matches
+    # 'recruiter'/'recruiting' -- a trailing \b would miss both.
+    (r"\b(universit\w*|univ|uni|campus)\b.*\b(recruit|talent|relations|program)", 1.00, "university-recruiting"),
+    (r"\b(early[- ]?career|early talent|emerging talent)\b", 1.00, "early-career"),
+    (r"\b(intern\w*|new grad\w*|new graduate\w*|student\w*)\b.*\b(program|recruit|talent|hiring)", 0.95, "intern-program"),
+    (r"\b(recruit\w*|talent)\b.*\b(universit\w*|univ|uni|campus|early[- ]?career|student|intern|new grad)", 0.95, "university-recruiting"),
+    (r"\b(universit\w*|campus) relations\b", 0.90, "university-relations"),
+    (r"\b(sourcer|sourcing)\b.*\b(universit\w*|campus|student|intern|early[- ]?career|new grad)", 0.60, "university-sourcing"),
+    (r"\b(universit\w*|campus|student|intern|early[- ]?career)\b.*\b(sourcer|sourcing)\b", 0.60, "university-sourcing"),
     (r"\b(technical|software|engineering|tech)\b.*\brecruit", 0.70, "technical-recruiting"),
     (r"\brecruit\w*\b.*\b(engineer|technical|software)", 0.70, "technical-recruiting"),
     (r"\b(talent acquisition|ta)\b.*\b(partner|specialist|manager|lead|associate)", 0.55, "talent-acquisition"),
@@ -26,8 +30,10 @@ TITLE_TIERS: list[tuple[str, float, str]] = [
     (r"\brecruit\w*\b", 0.55, "recruiting-generic"),
     (r"\btalent acquisition\b", 0.55, "talent-acquisition"),
     (r"\b(people operations|people ops|human resources|hr)\b", 0.35, "people-ops"),
+    (r"\bpeople (partner|business partner|advisor|team)\b", 0.35, "people-ops"),
     (r"\b(engineering|software) (manager|lead|director)\b", 0.30, "eng-hiring-manager"),
-    (r"\b(head|vp|vice president|director) of (people|talent|hr)\b", 0.40, "people-leadership"),
+    (r"\b(head|vp|vice president|director) of (people|talent|hr|human resources)\b", 0.40, "people-leadership"),
+    (r"\bchief (people|talent|hr|human resources)\b", 0.40, "people-leadership"),
 ]
 
 # How likely the person is to personally read and answer a cold email.
